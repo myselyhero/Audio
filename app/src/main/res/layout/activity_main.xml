@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="20dp"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/main_record_ing"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="已录制时间：00:00"
+            android:textColor="@color/black"/>
+        <TextView
+            android:layout_marginTop="20dp"
+            android:id="@+id/main_file_size"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="已录制文件大小：0B"
+            android:textColor="@color/black"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_weight="1"
+            android:id="@+id/main_start_btn"
+            android:gravity="center"
+            android:layout_margin="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="开始录音"
+            android:textColor="@color/white"
+            android:background="@drawable/main_permission_window_agree"/>
+
+        <TextView
+            android:layout_weight="1"
+            android:id="@+id/main_stop_btn"
+            android:gravity="center"
+            android:layout_margin="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="停止录音并上传"
+            android:textColor="@color/white"
+            android:background="@drawable/main_permission_window_cancel"/>
+    </LinearLayout>
+
+</LinearLayout>
