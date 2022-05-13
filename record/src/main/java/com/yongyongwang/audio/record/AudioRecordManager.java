@@ -1,0 +1,214 @@
+package com.yongyongwang.audio.record;
+
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
+import android.text.TextUtils;
+import android.util.Log;
+
+import com.yongyongwang.audio.record.model.OnAudioPlayerListener;
+import com.yongyongwang.audio.record.model.OnAudioRecordListener;
+import com.yongyongwang.audio.record.util.FileUtils;
+
+import java.io.File;
+
+/**
+ * @author yongyongwang 
+ * 
+ * @desc:
+ * 
+ * @// TODO: 2022/5/12
+ */
+public class AudioRecordManager {
+
+    private static final String TAG = "AudioRecordManager";
+
+    private static AudioRecordManager instance;
+
+    private static final String FILE_SUFFIX = ".m4a";
+
+    /* 播放器 */
+    private MediaPlayer mediaPlayer;
+    /*  */
+    private MediaRecorder mMediaRecorder;
+    /* 是否正在录制 */
+    private volatile Boolean isRecord = false;
+    /* 是否正在播放 */
+    private boolean isPlayer;
+    /* 时间 */
+    private long startTime,endTime;
+    /* 保存路径 */
+    private String filePath;
+    /* 监听 */
+    private OnAudioRecordListener recordListener;
+    private OnAudioPlayerListener playerListener;
+
+    public static AudioRecordManager getInstance() {
+        if (instance == null){
+            synchronized (AudioRecordManager.class){
+                instance = new AudioRecordManager();
+            }
+        }
+        return instance;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public String getFilePath(){
+        return filePath;
+    }
+
+    /**
+     * 开始录音
+     * @param path
+     * @param listener
+     */
+    public void startRecord(String path, OnAudioRecordListener listener){
+        synchronized (isRecord){
+            if (isRecord)
+                return;
+            isRecord = true;
+            filePath = path;
+            recordListener = listener;
+            new AudioRecordThread().start();
+        }
+    }
+
+    /**
+     * 停止录音
+     */
+    public void stopRecord(){
+        synchronized (isRecord){
+            if (!isRecord)
+                return;
+            if (mMediaRecorder != null) {
+                try {
+                    isRecord = false;
+                    mMediaRecorder.stop();
+                    mMediaRecorder.release();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            endTime = System.currentTimeMillis();
+            if (recordListener != null)
+                recordListener.complete(filePath,endTime - startTime);
+        }
+    }
+
+    /**
+     * 播放
+     * @param path
+     * @param listener
+     */
+    public void startPlayer(String path, OnAudioPlayerListener listener){
+        if (isPlayer || TextUtils.isEmpty(path))
+            return;
+        playerListener = listener;
+        new PlayerRecordThread(path).start();
+    }
+
+    /**
+     *
+     */
+    public void stopPlayer(){
+        if (mMediaRecorder != null) {
+            mMediaRecorder.stop();
+            mMediaRecorder.release();
+            isPlayer = false;
+            playerListener = null;
+        }
+    }
+
+    /* 内部API */
+
+
+    /**
+     *录音
+     */
+    private class AudioRecordThread extends Thread {
+        @Override
+        public void run() {
+            super.run();
+            if (TextUtils.isEmpty(filePath)){
+                filePath = FileUtils.AUDIO_PATH + File.separator + System.currentTimeMillis() + FILE_SUFFIX;
+            }
+            try {
+                mMediaRecorder = new MediaRecorder();
+                mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                //RAW_AMR虽然被高版本废弃，但它兼容低版本还是可以用的
+                mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
+                mMediaRecorder.setOutputFile(filePath);
+                mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+                startTime = System.currentTimeMillis();
+                synchronized (isRecord) {
+                    if (!isRecord)
+                        return;
+                    mMediaRecorder.prepare();
+                    mMediaRecorder.start();
+                    if (recordListener != null)
+                        recordListener.start(filePath);
+                }
+                new Thread() {
+                    @Override
+                    public void run() {
+                        while (isRecord) {
+                            try {
+                                AudioRecordThread.sleep(200);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            if (recordListener != null){
+                                recordListener.recordContinue(System.currentTimeMillis() - startTime);
+                            }
+                        }
+                    }
+                }.start();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * 播放
+     */
+    private class PlayerRecordThread extends Thread {
+
+        private String mPath;
+
+        public PlayerRecordThread(String path){
+            mPath = path;
+        }
+
+        @Override
+        public void run() {
+            super.run();
+            try {
+                mediaPlayer = new MediaPlayer();
+                mediaPlayer.setDataSource(mPath);
+                mediaPlayer.setOnCompletionListener(mediaPlayer1 -> {
+                    isPlayer = false;
+                    if (playerListener != null)
+                        playerListener.complete();
+                });
+                mediaPlayer.setOnPreparedListener(mediaPlayer1 -> {
+                    mediaPlayer.start();
+                    isPlayer = true;
+                    if (playerListener != null){
+                        playerListener.start(mediaPlayer1);
+                    }
+                });
+                mediaPlayer.prepareAsync();
+            } catch (Exception e) {
+                Log.e(this.getClass().getSimpleName(), "run: 语音文件已损坏或不存在");
+                e.printStackTrace();
+                isPlayer = false;
+                if (playerListener != null)
+                    playerListener.complete();
+            }
+        }
+    }
+}
