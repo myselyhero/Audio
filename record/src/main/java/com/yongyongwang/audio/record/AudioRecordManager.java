@@ -31,7 +31,6 @@ public class AudioRecordManager {
     private MediaRecorder mMediaRecorder;
     /* 是否正在录制 */
     private volatile Boolean isRecord = false;
-    private AudioRecordThread recordThread;
     /* 是否正在播放 */
     private boolean isPlayer;
     /* 时间 */
@@ -79,8 +78,7 @@ public class AudioRecordManager {
             isRecord = true;
             filePath = path;
             recordListener = listener;
-            recordThread = new AudioRecordThread();
-            recordThread.start();
+            new AudioRecordThread().start();
         }
     }
 
@@ -105,9 +103,6 @@ public class AudioRecordManager {
             endTime = System.currentTimeMillis();
             if (recordListener != null)
                 recordListener.complete(filePath,endTime - startTime);
-            /* 销毁线程 */
-            if (recordThread != null)
-                recordThread.stop();
         }
     }
 
