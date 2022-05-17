@@ -8,6 +8,7 @@ import android.util.Log;
 import com.yongyongwang.audio.record.model.OnAudioPlayerListener;
 import com.yongyongwang.audio.record.model.OnAudioRecordListener;
 import com.yongyongwang.audio.record.util.FileUtils;
+import com.yongyongwang.audio.record.util.LogUtil;
 
 import java.io.File;
 
@@ -20,11 +21,9 @@ import java.io.File;
  */
 public class AudioRecordManager {
 
-    private static final String TAG = "AudioRecordManager";
-
     private static AudioRecordManager instance;
 
-    private static final String FILE_SUFFIX = ".m4a";
+    public static final String FILE_SUFFIX = ".m4a";
 
     /* 播放器 */
     private MediaPlayer mediaPlayer;
@@ -32,6 +31,7 @@ public class AudioRecordManager {
     private MediaRecorder mMediaRecorder;
     /* 是否正在录制 */
     private volatile Boolean isRecord = false;
+    private AudioRecordThread recordThread;
     /* 是否正在播放 */
     private boolean isPlayer;
     /* 时间 */
@@ -60,6 +60,14 @@ public class AudioRecordManager {
     }
 
     /**
+     *
+     * @return
+     */
+    public boolean isRecord(){
+        return isRecord;
+    }
+
+    /**
      * 开始录音
      * @param path
      * @param listener
@@ -71,7 +79,8 @@ public class AudioRecordManager {
             isRecord = true;
             filePath = path;
             recordListener = listener;
-            new AudioRecordThread().start();
+            recordThread = new AudioRecordThread();
+            recordThread.start();
         }
     }
 
@@ -82,6 +91,7 @@ public class AudioRecordManager {
         synchronized (isRecord){
             if (!isRecord)
                 return;
+            /* 释放 */
             if (mMediaRecorder != null) {
                 try {
                     isRecord = false;
@@ -91,10 +101,22 @@ public class AudioRecordManager {
                     e.printStackTrace();
                 }
             }
+            /* 回调 */
             endTime = System.currentTimeMillis();
             if (recordListener != null)
                 recordListener.complete(filePath,endTime - startTime);
+            /* 销毁线程 */
+            if (recordThread != null)
+                recordThread.stop();
         }
+    }
+
+    /**
+     *
+     * @return
+     */
+    private boolean isPlayer(){
+        return isPlayer;
     }
 
     /**
@@ -138,9 +160,13 @@ public class AudioRecordManager {
                 mMediaRecorder = new MediaRecorder();
                 mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                 //RAW_AMR虽然被高版本废弃，但它兼容低版本还是可以用的
-                mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
+                mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.RAW_AMR);
                 mMediaRecorder.setOutputFile(filePath);
                 mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+                mMediaRecorder.setOnErrorListener((mediaRecorder, i, i1) -> {
+                    LogUtil.e("录音出现了问题："+i+"i1:"+i1);
+                    stopRecord();
+                });
                 startTime = System.currentTimeMillis();
                 synchronized (isRecord) {
                     if (!isRecord)
@@ -155,7 +181,7 @@ public class AudioRecordManager {
                     public void run() {
                         while (isRecord) {
                             try {
-                                AudioRecordThread.sleep(200);
+                                AudioRecordThread.sleep(1000);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
