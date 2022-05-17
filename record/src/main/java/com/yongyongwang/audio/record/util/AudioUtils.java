@@ -18,14 +18,14 @@ public class AudioUtils {
      * @param videoPath
      * @return
      */
-    public static int getVideoDuration(String videoPath) {
+    public static long getVideoDuration(String videoPath) {
         if (TextUtils.isEmpty(videoPath))
             return -1;
         MediaMetadataRetriever retr = new MediaMetadataRetriever();
         retr.setDataSource(videoPath);
         String rotation = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION); // 视频时长 毫秒
         retr.release();
-        return Integer.parseInt(rotation);
+        return Long.parseLong(rotation);
     }
 
     /**
@@ -40,6 +40,6 @@ public class AudioUtils {
         retr.setDataSource(path);
         String rotation = retr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION); // 视频时长 毫秒
         retr.release();
-        return Integer.parseInt(rotation);
+        return Long.parseLong(rotation);
     }
 }
