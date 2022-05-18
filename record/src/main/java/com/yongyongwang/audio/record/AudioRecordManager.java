@@ -67,6 +67,22 @@ public class AudioRecordManager {
     }
 
     /**
+     *
+     * @return
+     */
+    public long getStartTime() {
+        return startTime;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public long getEndTime() {
+        return endTime;
+    }
+
+    /**
      * 开始录音
      * @param path
      * @param listener
