@@ -104,7 +104,7 @@ public class FileUtils {
      * @param newPath
      * @return 返回修改后的名字，如果失败则返回空
      */
-    private String renameFile(String oldPath, String newPath) {
+    public static String renameFile(String oldPath, String newPath) {
         if (TextUtils.isEmpty(oldPath) || TextUtils.isEmpty(newPath)) {
             return null;
         }

@@ -25,7 +25,7 @@ public class DateTimeUtil {
      * @param date
      * @return
      */
-    private String longToString(long date){
+    public static String longToString(long date){
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return simpleDateFormat.format(date);
     }
