@@ -99,6 +99,22 @@ public class FileUtils {
     }
 
     /**
+     * 重命名
+     * @param oldPath
+     * @param newPath
+     * @return 返回修改后的名字，如果失败则返回空
+     */
+    private String renameFile(String oldPath, String newPath) {
+        if (TextUtils.isEmpty(oldPath) || TextUtils.isEmpty(newPath)) {
+            return null;
+        }
+        File oldFile = new File(oldPath);
+        File newFile = new File(newPath);
+        boolean b = oldFile.renameTo(newFile);
+        return b ? newFile.getName() : "";
+    }
+
+    /**
      *
      * @param path
      * @return

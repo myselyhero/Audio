@@ -2,6 +2,8 @@ package com.yongyongwang.audio.record.util;
 
 import android.text.TextUtils;
 
+import java.text.SimpleDateFormat;
+
 /**
  * @author yongyongwang 
  * 
@@ -17,6 +19,16 @@ public class DateTimeUtil {
     private final static long day = 24 * hour;// 1天
     private final static long month = 31 * day;// 月
     private final static long year = 12 * month;// 年
+
+    /**
+     *
+     * @param date
+     * @return
+     */
+    private String longToString(long date){
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return simpleDateFormat.format(date);
+    }
 
     /**
      * 格式化时间
