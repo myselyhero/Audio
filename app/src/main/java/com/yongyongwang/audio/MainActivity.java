@@ -158,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void start(){
         startTextView.setEnabled(false);
         stopTextView.setEnabled(true);
-        AudioRecordManager.getInstance().startRecord(null, new OnAudioRecordListener() {
+        AudioRecordManager.getInstance().startMp3Record(null, new OnAudioRecordListener() {
             @Override
             public void start(String path) {
                 /*List<String> list = new ArrayList<>();
@@ -191,6 +191,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void stop(){
         stopTextView.setEnabled(false);
         startTextView.setEnabled(true);
-        AudioRecordManager.getInstance().stopRecord();
+        AudioRecordManager.getInstance().stopMp3Record();
     }
 }
