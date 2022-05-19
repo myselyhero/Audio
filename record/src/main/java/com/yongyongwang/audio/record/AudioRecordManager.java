@@ -23,7 +23,9 @@ public class AudioRecordManager {
 
     private static AudioRecordManager instance;
 
-    public static final String FILE_SUFFIX = ".m4a";
+    //.m4a
+    //为了后端能够在h5上播放改的格式
+    public static final String FILE_SUFFIX = ".mp3";
 
     /* 播放器 */
     private MediaPlayer mediaPlayer;
