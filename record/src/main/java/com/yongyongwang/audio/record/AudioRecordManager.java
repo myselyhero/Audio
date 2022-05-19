@@ -5,12 +5,14 @@ import android.media.MediaRecorder;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.czt.mp3recorder.MP3Recorder;
 import com.yongyongwang.audio.record.model.OnAudioPlayerListener;
 import com.yongyongwang.audio.record.model.OnAudioRecordListener;
 import com.yongyongwang.audio.record.util.FileUtils;
 import com.yongyongwang.audio.record.util.LogUtil;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * @author yongyongwang 
@@ -23,14 +25,14 @@ public class AudioRecordManager {
 
     private static AudioRecordManager instance;
 
-    //.m4a
-    //为了后端能够在h5上播放改的格式
-    public static final String FILE_SUFFIX = ".mp3";
+    public static final String M4A_SUFFIX = ".m4a";
+    public static final String MP3_SUFFIX = ".mp3";
 
     /* 播放器 */
     private MediaPlayer mediaPlayer;
     /*  */
     private MediaRecorder mMediaRecorder;
+    private MP3Recorder mp3Recorder;
     /* 是否正在录制 */
     private volatile Boolean isRecord = false;
     /* 是否正在播放 */
@@ -85,6 +87,42 @@ public class AudioRecordManager {
     }
 
     /**
+     *
+     * @param path
+     * @param listener
+     */
+    public void startMp3Record(String path,OnAudioRecordListener listener){
+        synchronized (isRecord){
+            if (isRecord)
+                return;
+            isRecord = true;
+            filePath = path;
+            recordListener = listener;
+            new MP3RecordThread().start();
+        }
+    }
+
+    /**
+     *
+     */
+    public void stopMp3Record(){
+        synchronized (isRecord){
+            if (!isRecord)
+                return;
+            isRecord = false;
+            /* 释放 */
+            if (mp3Recorder != null) {
+                mp3Recorder.stop();
+                mp3Recorder = null;
+            }
+            /* 回调 */
+            endTime = System.currentTimeMillis();
+            if (recordListener != null)
+                recordListener.complete(filePath,endTime - startTime);
+        }
+    }
+
+    /**
      * 开始录音
      * @param path
      * @param listener
@@ -107,12 +145,13 @@ public class AudioRecordManager {
         synchronized (isRecord){
             if (!isRecord)
                 return;
+            isRecord = false;
             /* 释放 */
             if (mMediaRecorder != null) {
                 try {
-                    isRecord = false;
                     mMediaRecorder.stop();
                     mMediaRecorder.release();
+                    mMediaRecorder = null;
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -158,6 +197,44 @@ public class AudioRecordManager {
 
     /* 内部API */
 
+    /**
+     *
+     */
+    private class MP3RecordThread extends Thread {
+        @Override
+        public void run() {
+            super.run();
+            if (TextUtils.isEmpty(filePath)){
+                filePath = FileUtils.AUDIO_PATH + File.separator + System.currentTimeMillis() + MP3_SUFFIX;
+            }
+            mp3Recorder = new MP3Recorder(new File(filePath));
+            try {
+                mp3Recorder.start();
+                startTime = System.currentTimeMillis();
+                if (recordListener != null)
+                    recordListener.start(filePath);
+
+                new Thread() {
+                    @Override
+                    public void run() {
+                        while (isRecord) {
+                            try {
+                                MP3RecordThread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            if (recordListener != null){
+                                recordListener.recordContinue(System.currentTimeMillis() - startTime);
+                            }
+                        }
+                    }
+                }.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     /**
      *录音
@@ -167,7 +244,7 @@ public class AudioRecordManager {
         public void run() {
             super.run();
             if (TextUtils.isEmpty(filePath)){
-                filePath = FileUtils.AUDIO_PATH + File.separator + System.currentTimeMillis() + FILE_SUFFIX;
+                filePath = FileUtils.AUDIO_PATH + File.separator + System.currentTimeMillis() + M4A_SUFFIX;
             }
             try {
                 mMediaRecorder = new MediaRecorder();
